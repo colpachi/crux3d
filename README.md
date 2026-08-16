@@ -100,6 +100,22 @@ The `_belt` builds add **experimental support for belt / conveyor (infinite-Z) p
 
 > ⚠️ Belt printer support is under active development and is **not yet merged into `main`** — it currently ships only in these parallel `_belt` builds, produced from the [`belt-printer`](https://github.com/OrcaSlicer/OrcaSlicer/tree/belt-printer) branch. See tracking PR [#14394](https://github.com/OrcaSlicer/OrcaSlicer/pull/14394) and the original documentation in [#12998](https://github.com/OrcaSlicer/OrcaSlicer/pull/12998).
 
+# CRUX3D interface layer
+
+The CRUX3D refactor keeps the existing OrcaSlicer visual workflow and adds a gray/blue Dracula-inspired shell around the editor. The 3D canvas, Prepare/Preview tabs, printer sidebar, device pages and calibration surfaces remain available. A persistent right-hand assistant provides printer-type selection, quick print parameters, versioned profile export, group/P2P collaboration entry points, MCP/provider selection and an AI chat surface.
+
+The interface is deliberately decoupled from the future network services: the UI already exposes the interaction points for a generic provider, a user-owned DeepSeek or Claude Code subscription, a local MCP server and internet group synchronization, while the slicing core and existing profile formats remain unchanged.
+
+## Windows build and run
+
+From a **Developer PowerShell** opened at the repository root, run:
+
+```powershell
+.\build_crux3d.ps1
+```
+
+The script configures and builds the dependencies, compiles the application in `RelWithDebInfo`, installs the generated files and starts `orca-slicer.exe`. Useful options include `-Configuration Release`, `-Architecture ARM64`, `-Clean`, `-SkipDependencies`, `-ConfigureOnly`, `-Tests`, `-Generator Ninja` and `-NoRun`.
+
 # How to install
 
 ## Windows

@@ -1,4 +1,5 @@
 #include "Plater.hpp"
+#include "Crux3dAssistPanel.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "../Utils/NetworkAgentFactory.hpp"
 #include "libslic3r/Config.hpp"
@@ -5225,6 +5226,7 @@ struct Plater::priv
     // PIMPL back pointer ("Q-Pointer")
     Plater *q;
     Sidebar *  sidebar;
+    Crux3dAssistPanel *crux3d_assist_panel;
     MainFrame *main_frame;
 
     MenuFactory menus;
@@ -5844,6 +5846,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         "best_object_pos",  "master_extruder_id"
         }))
     , sidebar(new Sidebar(q))
+    , crux3d_assist_panel(new Crux3dAssistPanel(q))
     , notification_manager(std::make_unique<NotificationManager>(q))
     , m_worker{q, std::make_unique<NotificationProgressIndicator>(notification_manager.get()), "ui_worker"}
     , m_sla_import_dlg{new SLAImportDialog{q}}
@@ -5958,6 +5961,18 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
                                    .BottomDockable(false)
                                    .BestSize(wxSize(39 * wxGetApp().em_unit(), 90 * wxGetApp().em_unit())));
 
+    // CRUX3D: persistent collaboration and AI surface. It is intentionally
+    // docked instead of overlaying the canvas, so the existing 3D workflow
+    // remains available and all current visual features keep their space.
+    m_aui_mgr.AddPane(crux3d_assist_panel, wxAuiPaneInfo()
+                                   .Name("crux3d-assist")
+                                   .Right()
+                                   .CloseButton(false)
+                                   .Floatable(false)
+                                   .TopDockable(false)
+                                   .BottomDockable(false)
+                                   .BestSize(wxSize(36 * wxGetApp().em_unit(), 90 * wxGetApp().em_unit())));
+
     auto* panel_sizer = new wxBoxSizer(wxHORIZONTAL);
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
@@ -5988,6 +6003,17 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             }
 
             sidebar_layout.is_collapsed = !sidebar.IsShown();
+        }
+
+        // The CRUX3D assistant is a persistent surface. Older saved
+        // perspectives do not know this pane, so make it visible after the
+        // legacy layout is restored.
+        auto& crux3d_assist = m_aui_mgr.GetPane(crux3d_assist_panel);
+        if (!crux3d_assist.IsOk()) {
+            BOOST_LOG_TRIVIAL(warning) << "CRUX3D assist pane was not registered";
+        } else {
+            crux3d_assist.Show(true);
+            crux3d_assist.Right();
         }
 
         // Keep tracking the current sidebar size, by storing it using `best_size`, which will be stored
@@ -11472,6 +11498,7 @@ void Plater::priv::show_preview_only_hint(wxCommandEvent &event)
 
 void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
     m_is_dark = wxSystemSettings::GetAppearance().IsDark();
+    crux3d_assist_panel->apply_theme(m_is_dark);
     if (view3D->get_canvas3d() && view3D->get_canvas3d()->is_initialized()) {
         view3D->get_canvas3d()->on_change_color_mode(m_is_dark);
         preview->get_canvas3d()->on_change_color_mode(m_is_dark);
@@ -11484,6 +11511,7 @@ void Plater::priv::on_apple_change_color_mode(wxSysColourChangedEvent& evt) {
 void Plater::priv::on_change_color_mode(SimpleEvent& evt) {
     m_is_dark = wxGetApp().app_config->get("dark_color_mode") == "1";
     sidebar->on_change_color_mode(m_is_dark);
+    crux3d_assist_panel->apply_theme(m_is_dark);
     view3D->get_canvas3d()->on_change_color_mode(m_is_dark);
     preview->get_canvas3d()->on_change_color_mode(m_is_dark);
     assemble_view->get_canvas3d()->on_change_color_mode(m_is_dark);
@@ -11495,6 +11523,7 @@ void Plater::priv::on_change_color_mode(SimpleEvent& evt) {
 void Plater::priv::apply_color_mode()
 {
     const bool is_dark         = wxGetApp().dark_mode();
+    crux3d_assist_panel->apply_theme(is_dark);
     wxColour   orca_color      = wxColour(59, 68, 70);//wxColour(ColorRGBA::ORCA().r_uchar(), ColorRGBA::ORCA().g_uchar(), ColorRGBA::ORCA().b_uchar());
     orca_color                 = is_dark ? StateColor::darkModeColorFor(orca_color) : StateColor::lightModeColorFor(orca_color);
     wxColour sash_color = is_dark ? wxColour(38, 46, 48) : wxColour(206, 206, 206);

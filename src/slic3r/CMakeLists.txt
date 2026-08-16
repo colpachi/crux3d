@@ -248,6 +248,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/GUI_Preview.hpp
     GUI/GUI_Utils.cpp
     GUI/GUI_Utils.hpp
+    GUI/Crux3dAssistPanel.cpp
+    GUI/Crux3dAssistPanel.hpp
     GUI/HintNotification.cpp
     GUI/HintNotification.hpp
     GUI/ThermalPreconditioningDialog.cpp
